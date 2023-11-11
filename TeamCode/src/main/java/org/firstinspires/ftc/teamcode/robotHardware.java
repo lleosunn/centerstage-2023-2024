@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-public class robotHardware {
+public class RobotHardware {
 
     DcMotor fl;
     DcMotor fr;
@@ -18,7 +18,7 @@ public class robotHardware {
     Servo wrist;
     Servo guider;
 
-    public robotHardware(DcMotor fl, DcMotor fr, DcMotor bl, DcMotor br, DcMotor lift1, DcMotor lift2, DcMotor arm, Servo claw, Servo wrist, Servo guider) {
+    public RobotHardware(DcMotor fl, DcMotor fr, DcMotor bl, DcMotor br, DcMotor lift1, DcMotor lift2, DcMotor arm, Servo claw, Servo wrist, Servo guider) {
         this.fl = fl;
         this.fr = fr;
         this.bl = bl;
