@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 
 public class RobotHardware {
 
@@ -10,9 +8,6 @@ public class RobotHardware {
     DcMotor fr;
     DcMotor bl;
     DcMotor br;
-
-
-
 
 
     public RobotHardware(DcMotor fl, DcMotor fr, DcMotor bl, DcMotor br) {
