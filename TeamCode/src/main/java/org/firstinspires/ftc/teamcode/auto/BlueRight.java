@@ -1,30 +1,9 @@
-/*
- * Copyright (c) 2021 OpenFTC Team
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
-package org.firstinspires.ftc.teamcode.apriltags;
+package org.firstinspires.ftc.teamcode.auto;
 
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -36,22 +15,44 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.RobotHardware;
 import org.firstinspires.ftc.teamcode.odometry;
+import org.opencv.core.Scalar;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
-import java.util.ArrayList;
 
-@TeleOp
-public class MoveToTag extends LinearOpMode
-{
+@Autonomous
+public class BlueRight extends LinearOpMode {
+
     private PIDController movePID;
     public static double p = 0.15, i = 0.5, d = 0.00000001; //0.15, 0.5, 8 0s 8
 
-    OpenCvCamera camera;
-    AprilTagDetectionPipeline aprilTagDetectionPipeline;
+    private OpenCvCamera webcam;
 
+    private static final int CAMERA_WIDTH  = 640; // width  of wanted camera resolution
+    private static final int CAMERA_HEIGHT = 360; // height of wanted camera resolution
+
+    private double CrLowerUpdate = 160;
+    private double CbLowerUpdate = 100;
+    private double CrUpperUpdate = 255;
+    private double CbUpperUpdate = 255;
+
+    public static double borderLeftX    = 0.0;   //fraction of pixels from the left side of the cam to skip
+    public static double borderRightX   = 0.0;   //fraction of pixels from the right of the cam to skip
+    public static double borderTopY     = 0.0;   //fraction of pixels from the top of the cam to skip
+    public static double borderBottomY  = 0.0;   //fraction of pixels from the bottom of the cam to skip
+
+    private double lowerruntime = 0;
+    private double upperruntime = 0;
+
+    // Red Range                                      Y      Cr     Cb
+    public static Scalar scalarLowerYCrCb = new Scalar(  0.0, 160.0, 100.0);
+    public static Scalar scalarUpperYCrCb = new Scalar(255.0, 255.0, 255.0);
+
+    // Yellow Range
+//    public static Scalar scalarLowerYCrCb = new Scalar(0.0, 100.0, 0.0);
+//    public static Scalar scalarUpperYCrCb = new Scalar(255.0, 170.0, 120.0);
     static final double FEET_PER_METER = 3.28084;
 
     // Lens intrinsics
@@ -64,17 +65,11 @@ public class MoveToTag extends LinearOpMode
     double cy = 221.506;
 
     // UNITS ARE METERS
-    double tagsize = 0.166;
+    double tagsize = 0.508; //Double check!!
 
-    int numFramesWithoutDetection = 0;
+    AprilTagDetection tagOfInterest = null;
 
-    final float DECIMATION_HIGH = 3;
-    final float DECIMATION_LOW = 2;
-    final float THRESHOLD_HIGH_DECIMATION_RANGE_METERS = 1.0f;
-    final int THRESHOLD_NUM_FRAMES_NO_DETECTION_BEFORE_LOW_DECIMATION = 4;
-
-
-    private static double maxpowermove = 0.95;
+    private static double maxpowermove = 0.5;
     private static double maxpowerstay = 0.6;
 
     private ElapsedTime runtime = new ElapsedTime();
@@ -82,9 +77,12 @@ public class MoveToTag extends LinearOpMode
     private DcMotor fr = null;
     private DcMotor bl = null;
     private DcMotor br = null;
-    private DcMotor lift1 = null;
-    private DcMotor lift2 = null;
-    private DcMotor arm = null;
+
+
+    // Set where we want the robot to go
+    public boolean LEFT_DETECT = false;
+    public boolean MIDDLE_DETECT = false;
+    public boolean RIGHT_DETECT = false;
 
     Servo claw;
     Servo wrist;
@@ -139,8 +137,7 @@ public class MoveToTag extends LinearOpMode
     odometry update;
 
     @Override
-    public void runOpMode()
-    {
+    public void runOpMode() {
 
         movePID = new PIDController(p, i, d);
 
@@ -148,20 +145,13 @@ public class MoveToTag extends LinearOpMode
         fr = hardwareMap.get(DcMotor.class, "fr");
         bl = hardwareMap.get(DcMotor.class, "bl");
         br = hardwareMap.get(DcMotor.class, "br");
-        lift1 = hardwareMap.get(DcMotor.class, "lift1");
-        lift2 = hardwareMap.get(DcMotor.class, "lift2");
-        arm = hardwareMap.get(DcMotor.class, "arm");
-
-        claw = hardwareMap.get(Servo.class, "claw");
-        wrist = hardwareMap.get(Servo.class, "wrist");
-        guider = hardwareMap.get(Servo.class, "guider");
 
         //odometers
         verticalLeft = hardwareMap.dcMotor.get("fl");
         verticalRight = hardwareMap.dcMotor.get("br");
         horizontal = hardwareMap.dcMotor.get("fr");
 
-        RobotHardware robot = new RobotHardware(fl, fr, bl, br, lift1, lift2, arm, claw, wrist, guider);
+        RobotHardware robot = new RobotHardware(fl, fr, bl, br);
         robot.innitHardwareMap();
 
         imuinit();
@@ -170,132 +160,85 @@ public class MoveToTag extends LinearOpMode
         telemetry.addData("angle", getAngle());
         telemetry.update();
 
-
-
+        //start of camera code
+        // OpenCV webcam
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
-
-        camera.setPipeline(aprilTagDetectionPipeline);
-        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        //OpenCV Pipeline
+        ContourPipeline myPipeline;
+        webcam.setPipeline(myPipeline = new ContourPipeline(borderLeftX,borderRightX,borderTopY,borderBottomY));
+        // Configuration of Pipeline
+        myPipeline.configureScalarLower(scalarLowerYCrCb.val[0],scalarLowerYCrCb.val[1],scalarLowerYCrCb.val[2]);
+        myPipeline.configureScalarUpper(scalarUpperYCrCb.val[0],scalarUpperYCrCb.val[1],scalarUpperYCrCb.val[2]);
+        // Webcam Streaming
+        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
             @Override
             public void onOpened()
             {
-                camera.startStreaming(800,448, OpenCvCameraRotation.UPSIDE_DOWN);
+                webcam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPSIDE_DOWN);
             }
 
             @Override
             public void onError(int errorCode)
             {
-
+                /*
+                 * This will be called if the camera could not be opened
+                 */
             }
         });
 
+
+        telemetry.update();
+
+
+
         waitForStart();
 
-        telemetry.setMsTransmissionInterval(50);
 
-        while (opModeIsActive())
-        {
-            // Calling getDetectionsUpdate() will only return an object if there was a new frame
-            // processed since the last time we called it. Otherwise, it will return null. This
-            // enables us to only run logic when there has been a new frame, as opposed to the
-            // getLatestDetections() method which will always return an object.
-            ArrayList<AprilTagDetection> detections = aprilTagDetectionPipeline.getDetectionsUpdate();
+        //start odometry thread
+        update = new odometry(verticalLeft, verticalRight, horizontal, 10, imu);
+        Thread positionThread = new Thread(update);
+        positionThread.start();
 
-            // If there's been a new frame...
-            if(detections != null)
-            {
-                telemetry.addData("FPS", camera.getFps());
-                telemetry.addData("Overhead ms", camera.getOverheadTimeMs());
-                telemetry.addData("Pipeline ms", camera.getPipelineTimeMs());
+        resetRuntime();
 
-                // If we don't see any tags
-                if(detections.size() == 0)
-                {
-                    numFramesWithoutDetection++;
 
-                    // If we haven't seen a tag for a few frames, lower the decimation
-                    // so we can hopefully pick one up if we're e.g. far back
-                    if(numFramesWithoutDetection >= THRESHOLD_NUM_FRAMES_NO_DETECTION_BEFORE_LOW_DECIMATION)
-                    {
-                        aprilTagDetectionPipeline.setDecimation(DECIMATION_LOW);
-                    }
+
+        //start of auto
+        while(opModeIsActive()){
+
+            // Camera Stuff
+            myPipeline.configureBorders(borderLeftX, borderRightX, borderTopY, borderBottomY);
+            if(myPipeline.error){
+                telemetry.addData("Exception: ", myPipeline.debug);
+            }
+            // Only use this line of the code when you want to find the lower and upper values
+            testing(myPipeline);
+
+            telemetry.addData("RectArea: ", myPipeline.getRectArea());
+            telemetry.update();
+
+            if(myPipeline.getRectArea() > 2000){
+                double rectMidpointX = myPipeline.getRectMidpointX();
+                double screenThird = CAMERA_WIDTH / 3.0;
+
+                if(rectMidpointX > 2 * screenThird){
+                    telemetry.addLine("OBJECT IS ON THE RIGHT SIDE");
                 }
-                // We do see tags!
-                else
-                {
-                    numFramesWithoutDetection = 0;
-
-                    // If the target is within 1 meter, turn on high decimation to
-                    // increase the frame rate
-                    if(detections.get(0).pose.z < THRESHOLD_HIGH_DECIMATION_RANGE_METERS)
-                    {
-                        aprilTagDetectionPipeline.setDecimation(DECIMATION_HIGH);
-                    }
-
-                    for(AprilTagDetection detection : detections) {
-                        if(detection.id == 1) {
-                            telemetry.addLine("\nTHIS WORKS FOR TAG ONE");
-                            // Start moving towards the tag
-                            fl.setPower(-0.5);
-                            fr.setPower(-0.5);
-                            bl.setPower(-0.5);
-                            br.setPower(-0.5);
-
-                            // Keep updating the detection and checking the distance
-                            while(opModeIsActive()) {
-                                detections = aprilTagDetectionPipeline.getDetectionsUpdate();
-                                if(detections != null && !detections.isEmpty()) {
-                                    detection = detections.get(0); // Assuming the first detection is the one we want
-                                    if(detection.pose.z*FEET_PER_METER <= 0.15) {
-                                        // Now we are close enough to the tag, so stop the robot
-                                        telemetry.addLine("\nReached the tag, stopping");
-                                        fl.setPower(0);
-                                        fr.setPower(0);
-                                        bl.setPower(0);
-                                        br.setPower(0);
-                                        break; // Break out of the while loop
-                                    }
-                                }
-                                // It's usually a good idea to sleep for a short time to prevent a busy-wait loop
-                                sleep(10);
-                            }
-                        }
-                        // ... handle other tags ...
-
-
-
-
-                    telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
-                        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
-                        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
-                        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
-                        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
-                        telemetry.addData("ID", detection.id);
-                        telemetry.update();
-                    }
+                else if(rectMidpointX > screenThird){
+                    telemetry.addLine("OBJECT IS IN THE MIDDLE");
                 }
-
-                telemetry.update();
+                else {
+                    telemetry.addLine("OBJECT IS ON THE LEFT SIDE");
+                    AUTONOMOUS_A();
+                }
             }
 
-            sleep(20);
         }
-    }
-    public void movetoalignwithconestack() {
-        moveTo(0, -50, 90, 6);
-    }
 
-    public void stayatstack() {stay (-26.25, -50, 90);}
 
-    public void movetopole() {
-        moveTo(-8, -50, 90, 8);
-    }
 
-    public void alignwithpole() {
-        stay(4, -47, 128);
     }
 
     public void moveTo(double targetX, double targetY, double targetOrientation, double error) {
@@ -313,7 +256,7 @@ public class MoveToTag extends LinearOpMode
             double x = movePID.calculate(currentX, targetX);
             double y = movePID.calculate(currentY, targetY);
 
-            double turn = 0.035 * (update.h() - targetOrientation);
+            double turn = 0.045 * (update.h() - targetOrientation);
             double theta = Math.toRadians(update.h());
             if (Math.abs(distanceX) < 1 || Math.abs(distanceY) < 1) {
                 movePID.reset();
@@ -392,4 +335,81 @@ public class MoveToTag extends LinearOpMode
             update.stop();
         }
     }
+    public void testing(ContourPipeline myPipeline){
+        if(lowerruntime + 0.05 < getRuntime()){
+            CrLowerUpdate += -gamepad1.left_stick_y;
+            CbLowerUpdate += gamepad1.left_stick_x;
+            lowerruntime = getRuntime();
+        }
+        if(upperruntime + 0.05 < getRuntime()){
+            CrUpperUpdate += -gamepad1.right_stick_y;
+            CbUpperUpdate += gamepad1.right_stick_x;
+            upperruntime = getRuntime();
+        }
+
+        CrLowerUpdate = inValues(CrLowerUpdate, 0, 255);
+        CrUpperUpdate = inValues(CrUpperUpdate, 0, 255);
+        CbLowerUpdate = inValues(CbLowerUpdate, 0, 255);
+        CbUpperUpdate = inValues(CbUpperUpdate, 0, 255);
+
+        myPipeline.configureScalarLower(0.0, CrLowerUpdate, CbLowerUpdate);
+        myPipeline.configureScalarUpper(255.0, CrUpperUpdate, CbUpperUpdate);
+
+        telemetry.addData("lowerCr ", (int)CrLowerUpdate);
+        telemetry.addData("lowerCb ", (int)CbLowerUpdate);
+        telemetry.addData("UpperCr ", (int)CrUpperUpdate);
+        telemetry.addData("UpperCb ", (int)CbUpperUpdate);
+    }
+    public Double inValues(double value, double min, double max){
+        if(value < min){ value = min; }
+        if(value > max){ value = max; }
+        return value;
+    }
+    public void AUTONOMOUS_A(){
+        telemetry.addLine("Autonomous A");
+
+        // Manual reverse
+        double reversetime1 = 0.8 * 1000;
+        fl.setPower(-0.5);
+        fr.setPower(-0.5);
+        bl.setPower(-0.5);
+        br.setPower(-0.5);
+        sleep((long) reversetime1);
+        fl.setPower(0);
+        fr.setPower(0);
+        bl.setPower(0);
+        br.setPower(0);
+
+        // Manual turn
+        double manualturn1 = 0.5 * 1000;
+        fl.setPower(-0.5);
+        fr.setPower(0.5);
+        bl.setPower(0.5);
+        br.setPower(-0.5);
+        sleep((long) manualturn1);
+        fl.setPower(0);
+        fr.setPower(0);
+        bl.setPower(0);
+        br.setPower(0);
+
+        moveTo(30, 30, 0, 45);
+        sleep(30000);
+
+
+    }
+    public void AUTONOMOUS_B(){
+        telemetry.addLine("Autonomous B");
+        sleep(20);
+        MIDDLE_DETECT = true;
+
+    }
+    public void AUTONOMOUS_C(){
+        telemetry.addLine("Autonomous C");
+        sleep(20);
+        RIGHT_DETECT = true;
+
+    }
 }
+
+
+

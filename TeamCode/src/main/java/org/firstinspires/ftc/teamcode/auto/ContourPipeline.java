@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.objectdetection;
+package org.firstinspires.ftc.teamcode.auto;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.apriltags;
+package org.firstinspires.ftc.teamcode.auto;
 
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -8,61 +8,36 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.teamcode.odometry;
 import org.firstinspires.ftc.teamcode.RobotHardware;
-
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.odometry;
+import org.opencv.core.Scalar;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
-import java.util.ArrayList;
 
 @Autonomous
-public class RIGHTm extends LinearOpMode {
+public class TestAuto extends LinearOpMode {
 
     private PIDController movePID;
     public static double p = 0.15, i = 0.5, d = 0.00000001; //0.15, 0.5, 8 0s 8
 
-    OpenCvCamera camera;
-    AprilTagDetectionPipeline aprilTagDetectionPipeline;
 
-    static final double FEET_PER_METER = 3.28084;
 
-    // Lens intrinsics
-    // UNITS ARE PIXELS
-    // NOTE: this calibration is for the C920 webcam at 800x448.
-    // You will need to do your own calibration for other configurations!
-    double fx = 578.272;
-    double fy = 578.272;
-    double cx = 402.145;
-    double cy = 221.506;
-
-    // UNITS ARE METERS
-    double tagsize = 0.508; //Double check!!
-
-    AprilTagDetection tagOfInterest = null;
-
-    private static double maxpowermove = 0.95;
-    private static double maxpowerstay = 0.6;
+    private static double maxpowermove = 0.5;
 
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor fl = null;
     private DcMotor fr = null;
     private DcMotor bl = null;
     private DcMotor br = null;
-    private DcMotor lift1 = null;
-    private DcMotor lift2 = null;
-    private DcMotor arm = null;
 
-    Servo claw;
-    Servo wrist;
-    Servo guider;
 
     DcMotor verticalLeft, verticalRight, horizontal;
     BNO055IMU imu;
@@ -121,20 +96,13 @@ public class RIGHTm extends LinearOpMode {
         fr = hardwareMap.get(DcMotor.class, "fr");
         bl = hardwareMap.get(DcMotor.class, "bl");
         br = hardwareMap.get(DcMotor.class, "br");
-        lift1 = hardwareMap.get(DcMotor.class, "lift1");
-        lift2 = hardwareMap.get(DcMotor.class, "lift2");
-        arm = hardwareMap.get(DcMotor.class, "arm");
-
-        claw = hardwareMap.get(Servo.class, "claw");
-        wrist = hardwareMap.get(Servo.class, "wrist");
-        guider = hardwareMap.get(Servo.class, "guider");
 
         //odometers
         verticalLeft = hardwareMap.dcMotor.get("fl");
         verticalRight = hardwareMap.dcMotor.get("br");
         horizontal = hardwareMap.dcMotor.get("fr");
 
-        RobotHardware robot = new RobotHardware(fl, fr, bl, br, lift1, lift2, arm, claw, wrist, guider);
+        RobotHardware robot = new RobotHardware(fl, fr, bl, br);
         robot.innitHardwareMap();
 
         imuinit();
@@ -143,65 +111,32 @@ public class RIGHTm extends LinearOpMode {
         telemetry.addData("angle", getAngle());
         telemetry.update();
 
-        //start of camera code
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        aprilTagDetectionPipeline = new org.firstinspires.ftc.teamcode.apriltags.AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
-        camera.setPipeline(aprilTagDetectionPipeline);
-        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
-            @Override
-            public void onOpened() {
-                camera.startStreaming(800, 448, OpenCvCameraRotation.UPSIDE_DOWN);
-            }
-            @Override
-            public void onError(int errorCode) {
-            }
-        });
-        telemetry.setMsTransmissionInterval(50);
-        boolean tag1Found = false;
-        boolean tag2Found = false;
-        boolean tag3Found = false;
 
-        robot.clawClose();
+        telemetry.update();
 
         waitForStart();
-        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        lift1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        lift2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         //start odometry thread
         update = new odometry(verticalLeft, verticalRight, horizontal, 10, imu);
         Thread positionThread = new Thread(update);
         positionThread.start();
 
-        int[] armHeight = {240, 160, 80, 0, 0};
-        double[] drift = {0.2, 0.4, 0.6, 0.8, 1};
         resetRuntime();
 
+
         //start of auto
-        moveTo(50, 50, 10, 45);
-        moveTo(20, -20, 0, 45);
-        moveTo(10, 10, 0, 45);
+        while(opModeIsActive()){
+//            moveTo(10, 10, -90, 2);
+//            moveTo(-10, -10, 90, 2);
+//            moveTo(-10, 10, -90, 2);
+//            moveTo(10, -10, 90, 0);
+            moveTo(0, -27, 0, 1);
+            moveTo(75, -27, 90, 1);
+
+        }
 
 
-    }
 
-
-
-
-
-    public void movetoalignwithconestack() {
-        moveTo(0, -50, 90, 6);
-    }
-
-    public void stayatstack() {stay (-26.25, -50, 90);}
-
-    public void movetopole() {
-        moveTo(-8, -50, 90, 8);
-    }
-
-    public void alignwithpole() {
-        stay(4, -47, 128);
     }
 
     public void moveTo(double targetX, double targetY, double targetOrientation, double error) {
@@ -219,7 +154,7 @@ public class RIGHTm extends LinearOpMode {
             double x = movePID.calculate(currentX, targetX);
             double y = movePID.calculate(currentY, targetY);
 
-            double turn = 0.035 * (update.h() - targetOrientation);
+            double turn = 0.04 * (update.h() - targetOrientation);
             double theta = Math.toRadians(update.h());
             if (Math.abs(distanceX) < 1 || Math.abs(distanceY) < 1) {
                 movePID.reset();
@@ -256,48 +191,8 @@ public class RIGHTm extends LinearOpMode {
             }
         }
     }
-    public void stay(double targetX, double targetY, double targetOrientation) {
-        double distanceX = targetX - (update.x() / COUNTS_PER_INCH);
-        double distanceY = targetY - (update.y() / COUNTS_PER_INCH);
-        double x = 0.1 * distanceX;
-        double y = 0.1 * distanceY;
-        double turn = 0.035 * (update.h() - targetOrientation);
-        double theta = Math.toRadians(update.h());
-
-        if (x > maxpowerstay) {
-            x = maxpowerstay;
-        }
-        else if (x < -maxpowerstay) {
-            x = -maxpowerstay;
-        }
-        else x = x;
-        if (y > maxpowerstay) {
-            y = maxpowerstay;
-        }
-        else if (y < -maxpowerstay) {
-            y = -maxpowerstay;
-        }
-        else y = y;
-        if (turn > 0.3) {
-            turn = 0.3;
-        }
-        else if (turn < -0.3) {
-            turn = -0.3;
-        }
-        else turn = turn;
-
-        double l = y * Math.sin(theta + (Math.PI/4)) - x * Math.sin(theta - (Math.PI/4));
-        double r = y * Math.cos(theta + (Math.PI/4)) - x * Math.cos(theta - (Math.PI/4));
-
-        fl.setPower(l + turn);
-        fr.setPower(r - turn);
-        bl.setPower(r + turn);
-        br.setPower(l - turn);
-
-        if(isStopRequested()) {
-            update.stop();
-        }
-    }
 
 }
+
+
 

@@ -70,7 +70,7 @@ public class odometry implements Runnable {
 
         currentLeftPos = encoderLeft.getCurrentPosition();
         currentRightPos = -encoderRight.getCurrentPosition();
-        currentAuxPos = encoderAux.getCurrentPosition();
+        currentAuxPos = -encoderAux.getCurrentPosition();
         currentIMU = getAngle();
 
         double leftChange = currentLeftPos - oldLeftPos;
@@ -83,7 +83,7 @@ public class odometry implements Runnable {
         orientationChange = Math.toRadians(IMUChange);
         robotOrientationRadians = Math.toRadians(currentIMU); //using imu
 
-        double horizontalChange = auxChange - (orientationChange * 10695); //168.4 10695 10000
+        double horizontalChange = auxChange - (orientationChange * 1860); //168.4 10695 10000
 
         double p = ((rightChange + leftChange) / 2);
         double n = horizontalChange;
