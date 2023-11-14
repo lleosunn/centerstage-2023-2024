@@ -130,8 +130,10 @@ public class TestAuto extends LinearOpMode {
 //            moveTo(-10, -10, 90, 2);
 //            moveTo(-10, 10, -90, 2);
 //            moveTo(10, -10, 90, 0);
-            moveTo(0, -27, 0, 1);
-            moveTo(75, -27, 90, 1);
+            moveTo(0, -27, 0, 1); // move to center of detection area
+            moveTo(60, -30, 90, 3); // Move to backboard
+
+            moveTo(91, -26, 90, 1);
 
         }
 

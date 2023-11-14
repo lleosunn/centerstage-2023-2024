@@ -22,7 +22,7 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 
-@Autonomous
+@Autonomous(name="Blue Right", group="Autonomous")
 public class BlueRight extends LinearOpMode {
 
     private PIDController movePID;
@@ -69,7 +69,7 @@ public class BlueRight extends LinearOpMode {
 
     AprilTagDetection tagOfInterest = null;
 
-    private static double maxpowermove = 0.5;
+    private static double maxpowermove = 0.7;
     private static double maxpowerstay = 0.6;
 
     private ElapsedTime runtime = new ElapsedTime();
@@ -78,15 +78,18 @@ public class BlueRight extends LinearOpMode {
     private DcMotor bl = null;
     private DcMotor br = null;
 
+    private DcMotor arm = null;
+
+    Servo wrist;
+    Servo leftclaw;
+    Servo rightclaw;
+
 
     // Set where we want the robot to go
     public boolean LEFT_DETECT = false;
     public boolean MIDDLE_DETECT = false;
     public boolean RIGHT_DETECT = false;
 
-    Servo claw;
-    Servo wrist;
-    Servo guider;
 
     DcMotor verticalLeft, verticalRight, horizontal;
     BNO055IMU imu;
@@ -145,6 +148,11 @@ public class BlueRight extends LinearOpMode {
         fr = hardwareMap.get(DcMotor.class, "fr");
         bl = hardwareMap.get(DcMotor.class, "bl");
         br = hardwareMap.get(DcMotor.class, "br");
+        arm = hardwareMap.get(DcMotor.class, "arm");
+
+        wrist = hardwareMap.get(Servo.class, "wrist");
+        leftclaw = hardwareMap.get(Servo.class, "leftclaw");
+        rightclaw = hardwareMap.get(Servo.class, "rightclaw");
 
         //odometers
         verticalLeft = hardwareMap.dcMotor.get("fl");
@@ -153,6 +161,10 @@ public class BlueRight extends LinearOpMode {
 
         RobotHardware robot = new RobotHardware(fl, fr, bl, br);
         robot.innitHardwareMap();
+
+        leftclaw.setPosition(0.4);
+        rightclaw.setPosition(0.49);
+        wrist.setPosition(0.9);
 
         imuinit();
         sleep(500);
@@ -176,22 +188,18 @@ public class BlueRight extends LinearOpMode {
             @Override
             public void onOpened()
             {
-                webcam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPSIDE_DOWN);
+                webcam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPRIGHT);
             }
 
             @Override
             public void onError(int errorCode)
             {
-                /*
-                 * This will be called if the camera could not be opened
-                 */
+                telemetry.addData("There is an error: ", errorCode);
             }
         });
 
 
         telemetry.update();
-
-
 
         waitForStart();
 
@@ -202,12 +210,19 @@ public class BlueRight extends LinearOpMode {
         positionThread.start();
 
         resetRuntime();
+        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+
 
 
 
         //start of auto
         while(opModeIsActive()){
 
+            arm.setTargetPosition(50);
+            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            arm.setPower(0.8);
             // Camera Stuff
             myPipeline.configureBorders(borderLeftX, borderRightX, borderTopY, borderBottomY);
             if(myPipeline.error){
@@ -225,9 +240,11 @@ public class BlueRight extends LinearOpMode {
 
                 if(rectMidpointX > 2 * screenThird){
                     telemetry.addLine("OBJECT IS ON THE RIGHT SIDE");
+                    AUTONOMOUS_C();
                 }
                 else if(rectMidpointX > screenThird){
                     telemetry.addLine("OBJECT IS IN THE MIDDLE");
+                    AUTONOMOUS_B();
                 }
                 else {
                     telemetry.addLine("OBJECT IS ON THE LEFT SIDE");
@@ -365,48 +382,70 @@ public class BlueRight extends LinearOpMode {
         if(value > max){ value = max; }
         return value;
     }
+
+
     public void AUTONOMOUS_A(){
         telemetry.addLine("Autonomous A");
+        moveTo(-6, -24, -45, 3); // move to detection area
 
-        // Manual reverse
-        double reversetime1 = 0.8 * 1000;
-        fl.setPower(-0.5);
-        fr.setPower(-0.5);
-        bl.setPower(-0.5);
-        br.setPower(-0.5);
-        sleep((long) reversetime1);
-        fl.setPower(0);
-        fr.setPower(0);
-        bl.setPower(0);
-        br.setPower(0);
+        runtime.reset();
+        while (runtime.seconds() < 2 && opModeIsActive()) {
+            stay(6, -30, -90);
+        }
+        leftclaw.setPosition(0.55); // left claw open
+        moveTo(-3, -54, 90, 5); // move past detection area
+        moveTo(40, -54, 90, 5); // Move past bar
+        moveTo(60, -23, 90, 5); // Move to backboard
 
-        // Manual turn
-        double manualturn1 = 0.5 * 1000;
-        fl.setPower(-0.5);
-        fr.setPower(0.5);
-        bl.setPower(0.5);
-        br.setPower(-0.5);
-        sleep((long) manualturn1);
-        fl.setPower(0);
-        fr.setPower(0);
-        bl.setPower(0);
-        br.setPower(0);
+        arm.setTargetPosition(1400);
+        arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        arm.setPower(0.8);
+        wrist.setPosition(0.6);
 
-        moveTo(30, 30, 0, 45);
-        sleep(30000);
+        runtime.reset();
+        while (runtime.seconds() < 3 && opModeIsActive()) {
+            stay(70, -23, 90); // deposit
+        }
+        leftclaw.setPosition(0.55);
+        rightclaw.setPosition(0.34);
+
+        runtime.reset();
+        while (runtime.seconds() < 30 && opModeIsActive()) {
+            stay(91, -50, 90); // Park
+        }
+
 
 
     }
     public void AUTONOMOUS_B(){
         telemetry.addLine("Autonomous B");
-        sleep(20);
-        MIDDLE_DETECT = true;
+
+        moveTo(0, -27, 0, 1); // move to center of detection area
+        moveTo(60, -30, 90, 5); // Move to backboard
+
+        moveTo(91, -29, 90, 5); // Move to tag 2
+
+        runtime.reset();
+        while (runtime.seconds() < 30 && opModeIsActive()) {
+            stay(91, -50, 90); // Park
+        }
+
+
 
     }
     public void AUTONOMOUS_C(){
         telemetry.addLine("Autonomous C");
-        sleep(20);
-        RIGHT_DETECT = true;
+        moveTo(0, -27, 0, 1); // move to center of detection area
+        moveTo(60, -30, 90, 5); // Move to backboard
+
+        moveTo(91, -38, 90, 5); // Move to tag 3
+
+        runtime.reset();
+        while (runtime.seconds() < 30 && opModeIsActive()) {
+            stay(91, -50, 90); // Park
+        }
+
+
 
     }
 }
