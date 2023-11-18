@@ -22,8 +22,8 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 
-@Autonomous(name="Blue Right", group="Autonomous")
-public class BlueRight extends LinearOpMode {
+@Autonomous(name="Red Left", group="Autonomous")
+public class RedLeft extends LinearOpMode {
 
     private PIDController movePID;
     public static double p = 0.15, i = 0.5, d = 0.00000001; //0.15, 0.5, 8 0s 8
@@ -47,12 +47,12 @@ public class BlueRight extends LinearOpMode {
     private double upperruntime = 0;
 
     // Red Range                                      Y      Cr     Cb
-    // public static Scalar scalarLowerYCrCb = new Scalar(  0.0, 160.0, 100.0);
-    // public static Scalar scalarUpperYCrCb = new Scalar(255.0, 255.0, 255.0);
+    public static Scalar scalarLowerYCrCb = new Scalar(  0.0, 160.0, 100.0);
+    public static Scalar scalarUpperYCrCb = new Scalar(255.0, 255.0, 255.0);
 
     // Blue Range                                      Y      Cr     Cb
-    public static Scalar scalarLowerYCrCb = new Scalar(0.0, 0.0, 120.0);
-    public static Scalar scalarUpperYCrCb = new Scalar(255.0, 100.0, 255.0);
+    //public static Scalar scalarLowerYCrCb = new Scalar(0.0, 0.0, 120.0);
+    //public static Scalar scalarUpperYCrCb = new Scalar(255.0, 100.0, 255.0);
 
 
     // Yellow Range
@@ -391,32 +391,32 @@ public class BlueRight extends LinearOpMode {
 
     public void AUTONOMOUS_A(){
         telemetry.addLine("Autonomous A");
-        moveTo(-6, -24, -45, 3); // move to detection area
+        moveTo(6, -24, 45, 3); // move to detection area
 
         runtime.reset();
         while (runtime.seconds() < 2 && opModeIsActive()) {
-            stay(6, -30, -90);
+            stay(-6, -30, 90);
         }
         leftclaw.setPosition(0.55); // left claw open
-        moveTo(-3, -54, 90, 5); // move past detection area
-        moveTo(40, -54, 90, 5); // Move past bar
-        moveTo(60, -23, 90, 5); // Move to backboard
+        moveTo(3, -54, -90, 5); // move past detection area
+        moveTo(-40, -54, -90, 5); // Move past bar
+        moveTo(-60, -23, -90, 5); // Move to backboard
 
-        arm.setTargetPosition(-1400);
+        arm.setTargetPosition(1400);
         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         arm.setPower(0.8);
         wrist.setPosition(0.6);
 
         runtime.reset();
         while (runtime.seconds() < 3 && opModeIsActive()) {
-            stay(77, -23, 90); // deposit
+            stay(-70, -23, -90); // deposit
         }
         leftclaw.setPosition(0.55);
         rightclaw.setPosition(0.34);
 
         runtime.reset();
         while (runtime.seconds() < 30 && opModeIsActive()) {
-            stay(77, -50, 90); // Park
+            stay(-91, -50, -90); // Park
         }
 
 

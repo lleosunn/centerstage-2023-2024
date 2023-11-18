@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.auto;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -23,6 +24,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 
 @Autonomous
+// @Disabled
 public class TestAuto extends LinearOpMode {
 
     private PIDController movePID;
@@ -37,6 +39,12 @@ public class TestAuto extends LinearOpMode {
     private DcMotor fr = null;
     private DcMotor bl = null;
     private DcMotor br = null;
+
+    private DcMotor arm = null;
+
+    Servo wrist;
+    Servo leftclaw;
+    Servo rightclaw;
 
 
     DcMotor verticalLeft, verticalRight, horizontal;
@@ -96,6 +104,12 @@ public class TestAuto extends LinearOpMode {
         fr = hardwareMap.get(DcMotor.class, "fr");
         bl = hardwareMap.get(DcMotor.class, "bl");
         br = hardwareMap.get(DcMotor.class, "br");
+        arm = hardwareMap.get(DcMotor.class, "arm");
+
+
+        wrist = hardwareMap.get(Servo.class, "wrist");
+        leftclaw = hardwareMap.get(Servo.class, "leftclaw");
+        rightclaw = hardwareMap.get(Servo.class, "rightclaw");
 
         //odometers
         verticalLeft = hardwareMap.dcMotor.get("fl");
@@ -122,6 +136,7 @@ public class TestAuto extends LinearOpMode {
         positionThread.start();
 
         resetRuntime();
+        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
         //start of auto
@@ -130,10 +145,10 @@ public class TestAuto extends LinearOpMode {
 //            moveTo(-10, -10, 90, 2);
 //            moveTo(-10, 10, -90, 2);
 //            moveTo(10, -10, 90, 0);
-            moveTo(0, -27, 0, 1); // move to center of detection area
-            moveTo(60, -30, 90, 3); // Move to backboard
-
-            moveTo(91, -26, 90, 1);
+            arm.setTargetPosition(-1400);
+            arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            arm.setPower(0.8);
+            wrist.setPosition(0.8);
 
         }
 
