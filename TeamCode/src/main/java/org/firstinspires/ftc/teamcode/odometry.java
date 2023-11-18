@@ -1,41 +1,19 @@
 package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import java.io.File;
-import com.qualcomm.hardware.bosch.BNO055IMU;
-
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 public class odometry implements Runnable {
     //Odometry wheels
     private DcMotor encoderLeft, encoderRight, encoderAux;
-
-    BNO055IMU imu;
-    BNO055IMU.Parameters parameters;
-    Orientation lastAngles = new Orientation();
+    IMU imu;
     double globalAngle;
-    public void imuinit() {
-        parameters = new BNO055IMU.Parameters();
-        parameters.mode = BNO055IMU.SensorMode.IMU;
-        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.loggingEnabled = false;
-        imu.initialize(parameters);
-    }
+
     private double getAngle() {
-        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
-        if (deltaAngle < -180)
-            deltaAngle += 360;
-        else if (deltaAngle > 180)
-            deltaAngle -= 360;
-        globalAngle += deltaAngle;
-        lastAngles = angles;
+        globalAngle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         return globalAngle;
     }
 
@@ -47,14 +25,11 @@ public class odometry implements Runnable {
     private double robotGlobalXCoordinatePosition = 0, robotGlobalYCoordinatePosition = 0, robotOrientationRadians = 0;
     private double oldRightPos = 0, oldLeftPos = 0, oldAuxPos = 0, oldIMU = 0;
 
-    //Algorithm constants
-    private double robotEncoderWheelDistance;
-    private double horizontalEncoderTickPerDegreeOffset;
 
     //Sleep time interval (milliseconds) for the position update thread
     private int sleepTime;
 
-    public odometry(DcMotor encoderLeft, DcMotor encoderRight, DcMotor encoderAux, int threadSleepDelay, BNO055IMU imu){
+    public odometry(DcMotor encoderLeft, DcMotor encoderRight, DcMotor encoderAux, int threadSleepDelay, IMU imu){
         this.encoderLeft = encoderLeft;
         this.encoderRight = encoderRight;
         this.encoderAux = encoderAux;
