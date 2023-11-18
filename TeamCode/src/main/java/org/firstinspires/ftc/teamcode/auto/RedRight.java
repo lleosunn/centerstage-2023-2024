@@ -1,18 +1,16 @@
 package org.firstinspires.ftc.teamcode.auto;
 
 import com.arcrobotics.ftclib.controller.PIDController;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.RobotHardware;
 import org.firstinspires.ftc.teamcode.odometry;
 import org.opencv.core.Scalar;
@@ -22,8 +20,8 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 
-@Autonomous(name="Blue Right", group="Autonomous")
-public class BlueRight extends LinearOpMode {
+@Autonomous(name="Red Right", group="Autonomous")
+public class RedRight extends LinearOpMode {
 
     private PIDController movePID;
     public static double p = 0.15, i = 0.5, d = 0.00000001; //0.15, 0.5, 8 0s 8
@@ -47,12 +45,12 @@ public class BlueRight extends LinearOpMode {
     private double upperruntime = 0;
 
     // Red Range                                      Y      Cr     Cb
-    // public static Scalar scalarLowerYCrCb = new Scalar(  0.0, 160.0, 100.0);
-    // public static Scalar scalarUpperYCrCb = new Scalar(255.0, 255.0, 255.0);
+    public static Scalar scalarLowerYCrCb = new Scalar(  0.0, 160.0, 100.0);
+    public static Scalar scalarUpperYCrCb = new Scalar(255.0, 255.0, 255.0);
 
     // Blue Range                                      Y      Cr     Cb
-    public static Scalar scalarLowerYCrCb = new Scalar(0.0, 0.0, 120.0);
-    public static Scalar scalarUpperYCrCb = new Scalar(255.0, 100.0, 255.0);
+    // public static Scalar scalarLowerYCrCb = new Scalar(0.0, 0.0, 120.0);
+    // public static Scalar scalarUpperYCrCb = new Scalar(255.0, 100.0, 255.0);
 
 
     // Yellow Range
@@ -352,78 +350,63 @@ public class BlueRight extends LinearOpMode {
 
         runtime.reset();
         while (runtime.seconds() < 2 && opModeIsActive()) {
-            stay(3, -27, -90);
+            stay(2, -27, -90);
         }
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) {
             rightclaw.setPosition(0.34); //right claw open
         }
-        moveTo(-3, -54, 90, 5); // move past detection area
-        moveTo(45, -56, 90, 8); // Move past bar
-        arm.setTargetPosition(1500);
-        moveTo(60, -25, 90, 5); // Move to backboard
 
+        arm.setTargetPosition(1500);
         wrist.setPosition(0.6);
         rightclaw.setPosition(0.49);
 
-
         runtime.reset();
         while (runtime.seconds() < 3 && opModeIsActive()) {
-            stay(78, -18, 90); // deposit
+            stay(-30, -32, -90);
         }
-
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) { //deposit
             leftclaw.setPosition(0.55);
         }
-
         runtime.reset();
-        while (runtime.seconds() < 30 && opModeIsActive()) {
-            stay(84, -50, 90); // Park
+        while (runtime.seconds() < 30 && opModeIsActive()) { //park
+            stay(-35, 0, -90);
             arm.setTargetPosition(50);
             wrist.setPosition(0.9);
             leftclaw.setPosition(0.4);
         }
 
 
-
     }
     public void AUTONOMOUS_B(){
         telemetry.addLine("Autonomous B");
-        moveTo(-12, -37, -90, 3); // move to detection area
+        moveTo(-12, -34, -90, 3); // move to detection area
 
         runtime.reset();
         while (runtime.seconds() < 2 && opModeIsActive()) {
-            stay(-12, -37, -90);
+            stay(-12, -34, -90);
         }
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) {
             rightclaw.setPosition(0.34); //right claw open
         }
-        moveTo(-20, -37, -90, 3);
-        moveTo(-20, -50, -90, 3);
 
-        moveTo(45, -56, 90, 8); // Move past bar
         arm.setTargetPosition(1500);
-        moveTo(60, -25, 90, 5); // Move to backboard
-
         wrist.setPosition(0.6);
         rightclaw.setPosition(0.49);
 
-
         runtime.reset();
         while (runtime.seconds() < 3 && opModeIsActive()) {
-            stay(78, -25, 90); // deposit
+            stay(-30, -23, -90);
         }
-
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) { //deposit
             leftclaw.setPosition(0.55);
         }
-
         runtime.reset();
-        while (runtime.seconds() < 30 && opModeIsActive()) {
-            stay(84, -50, 90); // Park
+        while (runtime.seconds() < 30 && opModeIsActive()) { //park
+            stay(-35, 0, -90);
             arm.setTargetPosition(50);
             wrist.setPosition(0.9);
             leftclaw.setPosition(0.4);
@@ -442,37 +425,26 @@ public class BlueRight extends LinearOpMode {
         while (runtime.seconds() < 1 && opModeIsActive()) {
             rightclaw.setPosition(0.34); //right claw open
         }
-        moveTo(-25, -25, -90, 3);
-        moveTo(-25, -50, 0, 3);
 
-        moveTo(45, -56, 90, 8); // Move past bar
         arm.setTargetPosition(1500);
-        moveTo(60, -30, 90, 5); // Move to backboard
-
         wrist.setPosition(0.6);
         rightclaw.setPosition(0.49);
 
-
         runtime.reset();
         while (runtime.seconds() < 3 && opModeIsActive()) {
-            stay(78, -32, 90); // deposit
+            stay(-30, -18, -90);
         }
-
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) { //deposit
             leftclaw.setPosition(0.55);
         }
-
         runtime.reset();
-        while (runtime.seconds() < 30 && opModeIsActive()) {
-            stay(84, -50, 90); // Park
+        while (runtime.seconds() < 30 && opModeIsActive()) { //park
+            stay(-35, 0, -90);
             arm.setTargetPosition(50);
             wrist.setPosition(0.9);
             leftclaw.setPosition(0.4);
         }
-
-
-
     }
 }
 

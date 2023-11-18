@@ -8,13 +8,15 @@ public class RobotHardware {
     DcMotor fr;
     DcMotor bl;
     DcMotor br;
+    DcMotor arm;
 
 
-    public RobotHardware(DcMotor fl, DcMotor fr, DcMotor bl, DcMotor br) {
+    public RobotHardware(DcMotor fl, DcMotor fr, DcMotor bl, DcMotor br, DcMotor arm) {
         this.fl = fl;
         this.fr = fr;
         this.bl = bl;
         this.br = br;
+        this.arm = arm;
 
 
     }
@@ -39,6 +41,9 @@ public class RobotHardware {
         bl.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         fr.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         br.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        arm.setDirection(DcMotor.Direction.REVERSE);
+        arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
     }
 
