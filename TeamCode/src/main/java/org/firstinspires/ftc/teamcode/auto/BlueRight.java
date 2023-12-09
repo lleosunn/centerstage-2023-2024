@@ -413,7 +413,7 @@ public class BlueRight extends LinearOpMode {
 
         runtime.reset();
         while (runtime.seconds() < 3 && opModeIsActive()) {
-            stay(78, -25, 90); // deposit
+            stay(78, -23, 90); // deposit
         }
 
         runtime.reset();
