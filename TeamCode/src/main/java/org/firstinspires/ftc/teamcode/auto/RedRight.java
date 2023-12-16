@@ -356,14 +356,16 @@ public class RedRight extends LinearOpMode {
         while (runtime.seconds() < 1 && opModeIsActive()) {
             rightclaw.setPosition(0.34); //right claw open
         }
-
-        arm.setTargetPosition(1500);
-        wrist.setPosition(0.6);
-        rightclaw.setPosition(0.49);
+        runtime.reset();
+        while (runtime.seconds() < 3 && opModeIsActive()) {
+            arm.setTargetPosition(1500);
+            wrist.setPosition(0.6);
+            rightclaw.setPosition(0.49);
+        }
 
         runtime.reset();
         while (runtime.seconds() < 3 && opModeIsActive()) {
-            stay(-30, -32, -90);
+            stay(-30, -33, -90);
         }
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) { //deposit
@@ -385,20 +387,23 @@ public class RedRight extends LinearOpMode {
 
         runtime.reset();
         while (runtime.seconds() < 2 && opModeIsActive()) {
-            stay(-12, -34, -90);
+            stay(-12, -36, -90);
         }
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) {
             rightclaw.setPosition(0.34); //right claw open
         }
 
-        arm.setTargetPosition(1500);
-        wrist.setPosition(0.6);
-        rightclaw.setPosition(0.49);
+        runtime.reset();
+        while (runtime.seconds() < 3 && opModeIsActive()) {
+            arm.setTargetPosition(1500);
+            wrist.setPosition(0.6);
+            rightclaw.setPosition(0.49);
+        }
 
         runtime.reset();
         while (runtime.seconds() < 3 && opModeIsActive()) {
-            stay(-30, -23, -90);
+            stay(-30, -25, -90);
         }
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) { //deposit
@@ -419,16 +424,19 @@ public class RedRight extends LinearOpMode {
 
         runtime.reset();
         while (runtime.seconds() < 2 && opModeIsActive()) {
-            stay(-21, -25, -90);
+            stay(-21, -27, -90);
         }
         runtime.reset();
         while (runtime.seconds() < 1 && opModeIsActive()) {
             rightclaw.setPosition(0.34); //right claw open
         }
 
-        arm.setTargetPosition(1500);
-        wrist.setPosition(0.6);
-        rightclaw.setPosition(0.49);
+        runtime.reset();
+        while (runtime.seconds() < 3 && opModeIsActive()) {
+            arm.setTargetPosition(1500);
+            wrist.setPosition(0.6);
+            rightclaw.setPosition(0.49);
+        }
 
         runtime.reset();
         while (runtime.seconds() < 3 && opModeIsActive()) {

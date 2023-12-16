@@ -345,7 +345,6 @@ public class BlueRight extends LinearOpMode {
         return value;
     }
 
-
     public void AUTONOMOUS_A(){
         telemetry.addLine("Autonomous A");
         moveTo(-6, -27, -90, 3); // move to detection area
@@ -384,8 +383,6 @@ public class BlueRight extends LinearOpMode {
             wrist.setPosition(0.9);
             leftclaw.setPosition(0.4);
         }
-
-
 
     }
     public void AUTONOMOUS_B(){

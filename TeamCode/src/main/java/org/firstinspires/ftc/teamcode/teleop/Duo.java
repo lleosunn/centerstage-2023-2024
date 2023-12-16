@@ -39,23 +39,11 @@ public class Duo extends LinearOpMode {
 
     CRServo righthang;
 
-    IMU imu;
-
-    private double globalAngle;
-
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        imu = hardwareMap.get(IMU.class, "imu");
-
-        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
-        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.UP;
-
-        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
-
-        imu.initialize(new IMU.Parameters(orientationOnRobot));
 
         fl = hardwareMap.get(DcMotor.class, "fl");
         fr = hardwareMap.get(DcMotor.class, "fr");
@@ -87,11 +75,9 @@ public class Duo extends LinearOpMode {
         arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         runtime.reset();
         double modifier = 1;
-        imu.resetYaw();
 
         while (opModeIsActive()) {
 
-            YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
 
             /*
             DRIVER 1 YEAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
@@ -100,36 +86,15 @@ public class Duo extends LinearOpMode {
             double x = gamepad1.left_stick_x;
             double y = -gamepad1.left_stick_y;
             double turn = gamepad1.right_stick_x;
-            double theta = Math.toRadians(orientation.getYaw(AngleUnit.DEGREES)) + (Math.PI/2);
-//
-//            fl.setPower(modifier*(y + x + turn));
-//            fr.setPower(modifier*(y - x - turn));
-//            bl.setPower(modifier*(y - x + turn));
-//            br.setPower(modifier*(y + x - turn));
+
+            fl.setPower(modifier*(y + x + turn));
+            fr.setPower(modifier*(y - x - turn));
+            bl.setPower(modifier*(y - x + turn));
+            br.setPower(modifier*(y + x - turn));
 
             if (gamepad1.right_trigger > 0){
                 modifier = 0.3;
             } else modifier = 1;
-
-
-            double flH = x * Math.sin(theta - (Math.PI/4));
-            double frH = x * Math.cos(theta - (Math.PI/4));
-            double blH = x * Math.cos(theta - (Math.PI/4));
-            double brH = x * Math.sin(theta - (Math.PI/4));
-
-            double flV = y * Math.sin(theta + (Math.PI/4));
-            double frV = y * Math.cos(theta + (Math.PI/4));
-            double blV = y * Math.cos(theta + (Math.PI/4));
-            double brV = y * Math.sin(theta + (Math.PI/4));
-
-            fl.setPower(flV - flH + turn);
-            fr.setPower(frV - frH - turn);
-            bl.setPower(blV - blH + turn);
-            br.setPower(brV - brH - turn);
-
-            if (gamepad1.right_stick_button) {
-                imu.resetYaw();
-            }
 
 
             /*
@@ -148,7 +113,7 @@ public class Duo extends LinearOpMode {
                 wrist.setPosition(0.45);
             }
             if (gamepad2.b) { //intake position
-                arm.setTargetPosition(100);
+                arm.setTargetPosition(0);
                 arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 arm.setPower(0.4);
                 wrist.setPosition(0.9);
