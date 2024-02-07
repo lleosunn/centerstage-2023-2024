@@ -30,9 +30,14 @@ public class BlueRight extends LinearOpMode {
 
     private OpenCvCamera webcam;
 
+    //Old Resolutions
+    /*
     private static final int CAMERA_WIDTH  = 640; // width  of wanted camera resolution
     private static final int CAMERA_HEIGHT = 360; // height of wanted camera resolution
+    */
 
+    private static final int CAMERA_WIDTH  = 2304; // width  of wanted camera resolution
+    private static final int CAMERA_HEIGHT = 1536; // height of wanted camera resolution
     private double CrLowerUpdate = 160;
     private double CbLowerUpdate = 100;
     private double CrUpperUpdate = 255;
@@ -64,10 +69,10 @@ public class BlueRight extends LinearOpMode {
     // UNITS ARE PIXELS
     // NOTE: this calibration is for the C920 webcam at 800x448.
     // You will need to do your own calibration for other configurations!
-    double fx = 578.272;
-    double fy = 578.272;
-    double cx = 402.145;
-    double cy = 221.506;
+    double fx = 1387.85;
+    double fy = 1394.05;
+    double cx = 965.15;
+    double cy = 533.992122;
 
     // UNITS ARE METERS
     double tagsize = 0.508; //Double check!!
